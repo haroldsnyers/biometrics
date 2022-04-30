@@ -2,7 +2,7 @@ import numba as nb
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.metrics import det_curve, DetCurveDisplay, roc_curve, RocCurveDisplay, precision_recall_curve
+from sklearn.metrics import det_curve, DetCurveDisplay, roc_curve, RocCurveDisplay, precision_recall_curve, auc
 import seaborn as sns
 
 
@@ -78,6 +78,28 @@ def compute_fpr_fnr_tpr_from_roc_curve(score, y_true):
     return fpr, fnr, tpr, threshold,
 
 
+def compute_cmc(similarity_matrix):
+    ranked_li = []
+    for elem in list(similarity_matrix.columns):
+        sorted = similarity_matrix[elem].sort_values(ascending=False)
+        print(sorted)
+        print()
+        previous_val = sorted[0]
+        index = 0
+        for i, index_ in enumerate(sorted.index):
+            # if previous !
+            if index_ == elem:
+                ranked_li.append(i)
+                break
+    s = pd.Series(ranked_li).value_counts(normalize=True).sort_index(ascending=True)
+    li_ranked = s.cumsum()
+    return li_ranked
+
+
+def compute_auc(precision, recall):
+    return auc(precision, recall)
+
+
 #####################
 ####### PLOTS  ######
 #####################
@@ -87,6 +109,7 @@ def plot_roc_curve(fpr, tpr, ax, title_add=""):
     display.plot(ax=ax)
     ax.set_title("Receiver Operating Characteristic (ROC) curves " + title_add)
     ax.set_ylim(0)
+    ax.set_xscale("log")
 
 
 def plot_det_curve(fpr, fnr, ax, title_add=""):
@@ -102,21 +125,35 @@ def plot_eer_roc(fpr, tpr, ax, result, title_add=""):
 
 
 def plot_eer_det(fpr, fnr, ax, result, title_add=""):
-    ax.plot(fpr, fnr)
-    ax.plot(result['fpr'], result['fnr'], 'ro')
+    ax.plot(fpr, fnr, label='DET')
+    ax.plot(result['fpr'], result['fnr'], 'ro', label="EER")
     ax.plot([0, 1], [0, 1])
+    ax.set_title("Detection Error tradeoff (DET) curves for " + title_add)
+    ax.set_xlabel("False positive rate (fpr)")
+    ax.set_ylabel("False negative rate (fnr)")
+    ax.legend()
+
+
+def plot_recall_precision(recall, precision, ax, title_add=""):
+    ax.plot(recall, precision)
+    ax.set_title("Precision-recall curve for " + title_add)
+    ax.set_xlabel("Recall")
+    ax.set_ylabel("Precision")
 
 
 def plot_score_distribution(ax, imposter, genuine, title):
+    bins = np.linspace(0, 1, 150)
     ax.set_title("Raw scores " + title, fontsize=12)
     ax.hist(imposter,
             label='Impostors', density=True,
-            color='C1', alpha=0.5, bins=50)
+            color='C1', alpha=0.5, bins=bins, range=(0, 0.5))
     ax.hist(genuine,
             label='Genuine', density=True,
-            color='C0', alpha=0.5, bins=50)
+            color='C0', alpha=0.5, bins=bins, range=(0, 0.5))
     ax.legend(fontsize=10)
     ax.set_yticks([], [])
+    ax.set_xlabel("Scores")
+    ax.set_xlim(0, 0.3)
 
 
 def plot_decision_threshold_far_frr(df, index, axes):
@@ -131,10 +168,17 @@ def plot_decision_threshold_far_frr(df, index, axes):
 
 def plot_decision_threshold_f1_acc(df, index, axes):
     p = sns.lineplot(data=df, ax=axes)
-    p.set(xlabel="Decision Threshold", ylabel="%",
-          title="F1 and accuracy as a function of the decision thresholds on the similarity score for " + index)
+    p.set(xlabel="Decision Threshold", ylabel="",
+          title="F1 and accuracy as a function of the decision \n thresholds on the similarity score for " + index)
 
 
+def plot_cmc(df, axes, index):
+    p = sns.lineplot(data=df, ax=axes)
+    p.set(xlabel="Rank", ylabel="Recognition rate",
+          title="Cumulative Matching Characteristic Curve for " + index)
+
+
+# Not used
 @nb.njit(fastmath=True, parallel=True)
 def compute_similarity_matrix(array):
     K = np.zeros((array.shape[0], array.shape[0]))
