@@ -1,6 +1,21 @@
 import numpy as np
+import cv2
 import pandas as pd
 from tqdm import tqdm
+
+
+def read_img(image_path):
+    # load the image and convert it to grayscale
+    gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+
+    # ROI, and resize it to a canonical size
+    try:
+        imagePathStem = str(image_path.stem)
+        k = int(imagePathStem[imagePathStem.rfind("_") + 1:][:4]) - 1
+    except:
+        pass
+
+    return gray, image_path.parent.name
 
 
 def chi2(hist_a, hist_b, eps=1e-10):

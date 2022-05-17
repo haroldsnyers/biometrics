@@ -27,9 +27,11 @@ def generate_dataframe(columns, data_list, index_values=None):
 def compute_precision_recall_f1(score, y_true, thresholds=False):
     logging.info('Computing precision recall')
     precision, recall, thresholds_values = precision_recall_curve(y_true=score, probas_pred=y_true)
-    logging.info('End precision recall computation')
+    logging.info('End precision recall computation curve')
     precision, recall = precision[:-1], recall[:-1]
+    logging.info('End precision recall computation')
     f1 = 2 * (precision * recall) / (precision + recall)
+    logging.info('End f1')
     if thresholds:
         return precision, recall, f1, thresholds_values
     else:

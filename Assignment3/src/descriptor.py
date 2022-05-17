@@ -35,7 +35,7 @@ class FacialDescriptor:
     n_classes = attr.ib(default=None)
     imshape = attr.ib(default=None)
 
-    def extract_face_representation(self, DESC, holdout_split=None):
+    def extract_face_representation(self, DESC, holdout_split=None, transfer_system=None):
         print(DESC==FeatureDescriptor.DL)
         if DESC == FeatureDescriptor.PCA:
             # Compute a PCA (eigenfaces) on the face dataset
@@ -64,10 +64,35 @@ class FacialDescriptor:
             #     dist_metric = self.CHI2
 
         if DESC == FeatureDescriptor.DL:
-            print(DESC)
+
             x_train, x_test, y_train, y_test = holdout_split(*siamese.get_siamese_paired_data(self.faces.images, self.faces.target))
 
             model, encoder = self.get_model()
+
+            rms = Adam()
+            model.compile(
+                loss=siamese.contrastive_loss,
+                optimizer=rms,
+                metrics=[siamese.accuracy],
+                run_eagerly=True)
+
+            epochs = 10
+            model.fit([x_train[:, 0], x_train[:, 1]], y_train,
+                      validation_split=0.2,
+                      batch_size=32, verbose=2, epochs=epochs)
+
+            test_scores = model.predict([x_test[:, 0], x_test[:, 1]])
+            test_acc = accuracy_score(y_test, test_scores > 0.5)
+            print("Accuracy on the test set: {}".format(test_acc))
+            embedded = encoder(self.faces.images.astype(np.float32)).numpy()
+
+            dist_metric = euclidean
+
+        if DESC == FeatureDescriptor.TL:
+            model = transfer_system['model']
+            encoder = transfer_system['encoder']
+
+            x_train, x_test, y_train, y_test = holdout_split(*siamese.get_siamese_paired_data(self.faces.images, self.faces.target))
 
             rms = Adam()
             model.compile(
