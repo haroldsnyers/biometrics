@@ -1,20 +1,18 @@
-import attr
-import numpy as np
-
 from enum import Enum
 
+import attr
+import localmodules.siamese as siamese
+import numpy as np
+from icecream import ic
+from localmodules.local_binary_patterns import LBP
+from scipy.spatial.distance import euclidean
+from scipy.stats import chisquare
 from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.metrics import accuracy_score
-from scipy.spatial.distance import euclidean
-from scipy.stats import chisquare
-from tensorflow.keras.optimizers import RMSprop, Adam
+from tensorflow.keras.optimizers import Adam
 # To visualize your model structure:
 from tensorflow.keras.utils import plot_model
-from icecream import ic
-
-from localmodules.local_binary_patterns import LBP
-import localmodules.siamese as siamese
 
 
 class FeatureDescriptor(Enum):
@@ -36,7 +34,7 @@ class FacialDescriptor:
     imshape = attr.ib(default=None)
 
     def extract_face_representation(self, DESC, holdout_split=None, transfer_system=None):
-        print(DESC==FeatureDescriptor.DL)
+        print(DESC == FeatureDescriptor.DL)
         if DESC == FeatureDescriptor.PCA:
             # Compute a PCA (eigenfaces) on the face dataset
             num_components = min(self.num_components, min(self.n_samples, self.n_features))
@@ -57,15 +55,15 @@ class FacialDescriptor:
         if DESC == FeatureDescriptor.LBP:
             ic(DESC)
             desc = LBP(numPoints=8, radius=1, grid_x=7, grid_y=7)
-            embedded = desc.describe_list(self.faces.images[...,0])
+            embedded = desc.describe_list(self.faces.images[..., 0])
             dist_metric = chisquare
 
             # if np.isnan(dist_metric).all():
             #     dist_metric = self.CHI2
 
         if DESC == FeatureDescriptor.DL:
-
-            x_train, x_test, y_train, y_test = holdout_split(*siamese.get_siamese_paired_data(self.faces.images, self.faces.target))
+            x_train, x_test, y_train, y_test = holdout_split(
+                *siamese.get_siamese_paired_data(self.faces.images, self.faces.target))
 
             model, encoder = self.get_model()
 
@@ -92,7 +90,8 @@ class FacialDescriptor:
             model = transfer_system['model']
             encoder = transfer_system['encoder']
 
-            x_train, x_test, y_train, y_test = holdout_split(*siamese.get_siamese_paired_data(self.faces.images, self.faces.target))
+            x_train, x_test, y_train, y_test = holdout_split(
+                *siamese.get_siamese_paired_data(self.faces.images, self.faces.target))
 
             rms = Adam()
             model.compile(
@@ -122,5 +121,3 @@ class FacialDescriptor:
         plot_model(model, to_file='results/model.png', show_shapes=True, show_layer_names=True)
 
         return model, encoder
-
-

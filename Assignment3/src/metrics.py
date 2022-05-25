@@ -1,12 +1,11 @@
+import logging
+
 import numba as nb
-from numba import prange
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.metrics import det_curve, DetCurveDisplay, roc_curve, RocCurveDisplay, precision_recall_curve, auc
 import seaborn as sns
-import logging
-from tqdm import tqdm
+from numba import prange
+from sklearn.metrics import det_curve, DetCurveDisplay, roc_curve, RocCurveDisplay, precision_recall_curve, auc
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
@@ -123,6 +122,7 @@ def get_f1_and_acc_dataframe(genuine, imposter, score, y_true):
         columns=['f1', 'acc'], data_list=[f1, accuracy], index_values=thresholds_values)
     logging.info('dataframe generated')
     return df_classification_metrics, precision, recall
+
 
 #####################
 ####### PLOTS  ######

@@ -133,3 +133,16 @@ dmypy.json
 
 Assignment1/data/bssr1
 Assignment1/data/bssr1.zip
+
+/Assignment2/data/*
+!/Assignment2/data/CASIA1
+!/Assignment2/data/NIST301
+!/Assignment2/data/NIST301
+!/Assignment2/data/perpetrator*
+Assignment2/logs/*
+Assignment2/neural_network/model
+
+Assignment3/data/*
+!Assignment3/data/CalTechFacesDirs
+Assignment3/output
+Assignment3/training_1
