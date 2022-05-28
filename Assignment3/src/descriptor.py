@@ -33,8 +33,7 @@ class FacialDescriptor:
     n_classes = attr.ib(default=None)
     imshape = attr.ib(default=None)
 
-    def extract_face_representation(self, DESC, holdout_split=None, transfer_system=None):
-        print(DESC == FeatureDescriptor.DL)
+    def extract_face_representation(self, DESC, holdout_split=None, transfer_system=None, epochs=15):
         if DESC == FeatureDescriptor.PCA:
             # Compute a PCA (eigenfaces) on the face dataset
             num_components = min(self.num_components, min(self.n_samples, self.n_features))
@@ -74,7 +73,7 @@ class FacialDescriptor:
                 metrics=[siamese.accuracy],
                 run_eagerly=True)
 
-            epochs = 10
+            epochs = epochs
             model.fit([x_train[:, 0], x_train[:, 1]], y_train,
                       validation_split=0.2,
                       batch_size=32, verbose=2, epochs=epochs)
@@ -100,7 +99,7 @@ class FacialDescriptor:
                 metrics=[siamese.accuracy],
                 run_eagerly=True)
 
-            epochs = 10
+            epochs = epochs
             model.fit([x_train[:, 0], x_train[:, 1]], y_train,
                       validation_split=0.2,
                       batch_size=32, verbose=2, epochs=epochs)

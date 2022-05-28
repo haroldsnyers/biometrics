@@ -10,8 +10,9 @@ import numpy as np
 import numpy.random as rng
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Conv2D, Input
-from tensorflow.keras.layers import MaxPooling2D, Lambda, Flatten, Dense
+from tensorflow.keras.layers import MaxPooling2D, Lambda, Flatten, Dense, Dropout
 from tensorflow.keras.models import Model, Sequential
+from tensorflow.nn import local_response_normalization
 
 
 def euclidean_distance(vectors):
@@ -35,6 +36,30 @@ def create_shared_network(input_shape):
     # small CNN
     # nb_filter = [16, 8]
     # larger CNN
+    # nb_filter = [128, 128, 64]
+    # kernel_size = [5, 3, 3]
+
+    # input = Input(shape = input_shape)
+
+    # x = Conv2D(filters=nb_filter[0], kernel_size=kernel_size[0], activation='relu', strides=1)(input)
+    # # x = local_response_normalization(x, depth_radius=5, alpha=0.0001, beta=0.75, bias=2)
+    # x = MaxPooling2D(pool_size=2, strides=1)(x)
+
+    # x = Conv2D(filters=nb_filter[1], kernel_size=kernel_size[1], activation='relu', strides=1, padding="same")(x)
+    # # x = local_response_normalization(x, depth_radius=5, alpha=0.0001, beta=0.75, bias=2)
+    # x = MaxPooling2D(pool_size=2, strides=1)(x)
+    # x = Dropout(rate=0.3)(x)
+
+    # x = Conv2D(filters=nb_filter[2], kernel_size=kernel_size[2], activation='relu', strides=1, padding="same")(x)
+    # x = MaxPooling2D(pool_size=3, strides=1)(x)
+    # x = Dropout(rate=0.2)(x)
+
+    # x = Flatten()(x)
+    # # x = Dense(units=30976, activation='relu')(x)
+    # x = Dense(units=256, activation='relu')(x)
+    # output = Dense(units=256, activation='relu')(x)
+    # model = Model(input, output)
+
     nb_filter = [128, 64]
     kernel_size = 3
 
@@ -48,6 +73,7 @@ def create_shared_network(input_shape):
 
     model.add(Flatten())
     model.add(Dense(units=128, activation='relu'))
+
     return model
 
 

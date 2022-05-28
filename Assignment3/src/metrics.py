@@ -23,18 +23,19 @@ def generate_dataframe(columns, data_list, index_values=None):
     return df
 
 
-def compute_precision_recall_f1(score, y_true, thresholds=False):
+def compute_precision_recall_f1(score, y_true, slice=False):
     logging.info('Computing precision recall')
     precision, recall, thresholds_values = precision_recall_curve(y_true=score, probas_pred=y_true)
-    logging.info('End precision recall computation curve')
     precision, recall = precision[:-1], recall[:-1]
-    logging.info('End precision recall computation')
+
+    if slice:
+        steps = round(len(precision)//500)
+        precision = precision[1::steps]
+        recall = recall[1::steps]
+        thresholds_values = thresholds_values[1::steps]
+
     f1 = 2 * (precision * recall) / (precision + recall)
-    logging.info('End f1')
-    if thresholds:
-        return precision, recall, f1, thresholds_values
-    else:
-        return precision, recall, f1
+    return precision, recall, f1, thresholds_values
 
 
 @nb.njit(fastmath=True)
@@ -50,27 +51,21 @@ def calculate_accuracy(genuine, imposter, thresholds=None):
     :param thresholds: threshold values to calculate accuracy from (provided or generated)
     :return: accuracy list in function of threshold values
     """
-    accuracy_list = []
+    accuracy_list = np.zeros((len(thresholds), 1))
     # if not thresholds.any():
     #     thresholds = generate_threshold_values(50)
 
     for x in prange(len(thresholds)):
         t = thresholds[x]
         TP, FP, TN, FN = 0, 0, 0, 0
-        for score in genuine:
-            if score >= t:
-                TP += 1
-            else:
-                FN += 1
+        TP = (genuine >= t).sum()
+        FN = len(genuine) - TP
 
-        for score in imposter:
-            if score >= t:
-                FP += 1
-            else:
-                TN += 1
+        FP = (imposter >= t).sum()
+        TN = len(imposter) - FP
 
         accuracy = (TP + TN) / (TP + TN + FP + FN)
-        accuracy_list.append(accuracy)
+        accuracy_list[x]= accuracy
     return accuracy_list
 
 
@@ -98,12 +93,10 @@ def compute_cmc(similarity_matrix):
             if index_ == elem:
                 ranked_li.append(i)
                 break
-    print(ranked_li)
     s = pd.Series(ranked_li).value_counts(normalize=True).sort_index(ascending=True)
     li_ranked = s.cumsum()
     if len(li_ranked) == 1:
         li_ranked.loc[1] = 1
-    print(ranked_li)
     return li_ranked
 
 
@@ -111,16 +104,16 @@ def compute_auc(precision, recall):
     return auc(precision, recall)
 
 
-def get_f1_and_acc_dataframe(genuine, imposter, score, y_true):
+def get_f1_and_acc_dataframe(genuine, imposter, score, y_true, slice=False):
     """Plot F1 and accuracy as a function of the decision thresholds on the similarity score."""
     # Hint: evaluating for ± 50 threshold values should suffice
-    precision, recall, f1, thresholds_values = compute_precision_recall_f1(score, y_true, True)
+    precision, recall, f1, thresholds_values = compute_precision_recall_f1(score, y_true, slice)
     logging.info('Computing accuracy')
     accuracy = calculate_accuracy(genuine.to_numpy(), imposter.to_numpy(), thresholds_values)
+    len(accuracy)
     logging.info('Generate dataframe')
     df_classification_metrics = generate_dataframe(
         columns=['f1', 'acc'], data_list=[f1, accuracy], index_values=thresholds_values)
-    logging.info('dataframe generated')
     return df_classification_metrics, precision, recall
 
 
